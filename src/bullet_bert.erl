@@ -35,7 +35,8 @@
     -> {ok, state()}
     | {stop, any()}.
 -callback handle_call(any(), state())
-    -> {reply, any(), state()}.
+    -> {reply, any(), state()}
+    |  {noreply, state()}.
 -callback handle_cast(any(), state())
     -> {noreply, state()}.
 -callback handle_info(any(), state())
@@ -74,7 +75,9 @@ handle_call({call, Timestamp, Term}, _From,
     case Handler:handle_call(Term, HandlerState) of
         {reply, Reply, NewHandlerState} ->
             {reply, {reply, {reply, Timestamp, Reply}},
-             State1#state{handler_state=NewHandlerState}}
+             State1#state{handler_state=NewHandlerState}};
+        {noreply, NewHandlerState} ->
+            {reply, ok, State1#state{handler_state=NewHandlerState}}
     end;
 handle_call({cast, Timestamp, Term}, _From,
             #state{handler=Handler, handler_state=HandlerState}=State) ->
@@ -156,8 +159,10 @@ terminate(_Reason, #state{clientid=ClientId}) ->
     ets:delete(bullet_clients, ClientId),
     ok;
 terminate(_Req, #bullet_state{clientid=ClientId}) ->
-    Pid = client_pid(ClientId),
-    gen_server:cast(Pid, {unregister, self()}),
+    case client_pid(ClientId) of
+        undefined -> ok;
+        Pid       -> gen_server:cast(Pid, {unregister, self()})
+    end,
     ok.
 
 %%%===================================================================
@@ -194,5 +199,7 @@ handle_reply(HandlerReply, Req, State) ->
     {reply, base64:encode(Reply), Req, State}. 
 
 client_pid(ClientId) ->
-    [{ClientId, Pid}] = ets:lookup(bullet_clients, ClientId),
-    Pid. 
+    case ets:lookup(bullet_clients, ClientId) of
+        [{ClientId, Pid}] -> Pid;
+        _                 -> undefined
+    end.
