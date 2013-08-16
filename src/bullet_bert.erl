@@ -155,9 +155,11 @@ info(Info, Req, State) ->
 %%%===================================================================
 %%% terminate/2 is common callback - differentiate by state record
 %%%===================================================================
-terminate(_Reason, #state{clientid=ClientId}) ->
+terminate(_Reason, #state{handler=Handler, 
+                          handler_state=HandlerState,
+                          clientid=ClientId}) ->
     ets:delete(bullet_clients, ClientId),
-    ok;
+    Handler:terminate(HandlerState);
 terminate(_Req, #bullet_state{clientid=ClientId}) ->
     case client_pid(ClientId) of
         undefined -> ok;
