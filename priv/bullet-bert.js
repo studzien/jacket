@@ -15,7 +15,8 @@
             bullet.send(data);
         };
 
-        this.call = function(message, timeout = 5000) {
+        this.call = function(message, timeout) {
+            var timeout = timeout || 5000;
             var timestamp = ++ts;
             var term = Bert.tuple(Bert.atom("call"), timestamp, message);
             var deferred = Q.defer();
