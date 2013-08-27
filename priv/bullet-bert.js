@@ -44,6 +44,10 @@
             send(Bert.encode(term));
         };
 
+        this.close = function() {
+            bullet.close();
+        };
+
         bullet.onopen = function() {
             console.log('bullet-bert connection opened!');
         };
