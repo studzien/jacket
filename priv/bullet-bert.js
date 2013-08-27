@@ -5,6 +5,8 @@
         var uuid = Math.uuid();
         var bullet = $.bullet(url+"/"+uuid , options);
 
+        var self = this;
+
         var send = function(term) {
             var len = term.length;
             var byteArray = new Uint8Array(len);
@@ -49,11 +51,17 @@
             bullet.close();
         };
 
+        this.onopen = function() {};
+        this.onclose = function() {};
+        this.onmessage = function() {};
+
         bullet.onopen = function() {
+            self.onopen();    
             console.log('bullet-bert connection opened!');
         };
 
         bullet.onclose = function() {
+            self.onclose();
             console.log('bullet-bert connection closed!');
         };
 
@@ -75,7 +83,7 @@
                     delete deferreds[timestamp];
                 }
                 else if(term[0].value == "info") {
-                    console.log("info: " + term);
+                    self.onmessage(term[2]);
                     ts = Math.max(term[1], ts+1);
                 }
             }
