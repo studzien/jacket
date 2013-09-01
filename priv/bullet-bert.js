@@ -71,13 +71,11 @@
         bullet.onopen = function() {
             self.onopen();    
             console.log('bullet-bert connection opened!');
-			self.onopen();
         };
 
         bullet.onclose = function() {
             self.onclose();
             console.log('bullet-bert connection closed!');
-			self.onclose();
         };
 
         bullet.onmessage = function(message) {
@@ -97,7 +95,6 @@
                 else if(term[0].value == "info") {
                     self.onmessage(term[2]);
                     ts = Math.max(term[1], ts+1);
-					self.onmessage(term[2]);
                 }
             }
         };
