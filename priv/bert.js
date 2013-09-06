@@ -63,7 +63,12 @@ function BertTuple(Arr) {
             if (s !== "") {
                 s += ", ";
             }
-            s += this[i].toString();
+            if(this[i] === undefined) {
+                s += 'undefined';
+            }
+            else {
+                s += this[i].toString();
+            }
         }
 
         return "{" + s + "}";
@@ -132,7 +137,9 @@ BertClass.prototype.port = function(Node, Id, Creation) {
 // - ENCODING -
 
 BertClass.prototype.encode_inner = function (Obj) {
-    if (Obj === undefined) throw new Error("Cannot encode undefined values.")
+    if (Obj === undefined) {
+        return this['encode_atom']({value: 'undefined'});
+    }
     var func = 'encode_' + typeof(Obj);
     return this[func](Obj);
 };
@@ -193,6 +200,9 @@ BertClass.prototype.encode_object = function (Obj) {
     if (Obj === null){
         return this.encode_inner(this.atom("null"));
     }
+    if (Obj === undefined) {
+        return this.encode_inner(this.atom("undefined"));
+    }
     if (Obj.type === "Atom") {
         return this.encode_atom(Obj);
     }
@@ -223,7 +233,8 @@ BertClass.prototype.encode_atom = function (Obj) {
 };
 
 BertClass.prototype.encode_binary = function (Obj) {
-    return this.BINARY + this.int_to_bytes(Obj.value.length, 4) + Obj.value;
+    var encoded = unescape(encodeURIComponent(Obj.value));
+    return this.BINARY + this.int_to_bytes(encoded.length, 4) + encoded;
 };
 
 BertClass.prototype.encode_tuple = function (Obj) {
@@ -321,9 +332,10 @@ BertClass.prototype.decode_atom = function (S, Count) {
     Size = this.bytes_to_int(S, Count);
     S = S.substring(Count);
     Value = S.substring(0, Size);
+    var value = (Value == 'undefined' ? undefined : this.atom(Value));
     return {
-        value: this.atom(Value),
-        rest:  S.substring(Size)
+        value: value,
+        rest: S.substring(Size)
     };
 };
 
@@ -331,7 +343,7 @@ BertClass.prototype.decode_binary = function (S) {
     var Size = this.bytes_to_int(S, 4);
     S = S.substring(4);
     return {
-        value: this.binary(S.substring(0, Size)),
+        value: this.binary(decodeURIComponent(escape(S.substring(0, Size)))),
         rest:  S.substring(Size)
     };
 };
