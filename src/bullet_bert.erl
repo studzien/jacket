@@ -59,6 +59,7 @@ init([ClientId, Handler, Args, Transport]) ->
     case Handler:init(Args) of
         {ok, HandlerState} ->
             Timer = erlang:send_after(?TIMEOUT, self(), timeout),
+            self() ! pong,
             State = #state{handler=Handler,
                            handler_state=HandlerState,
                            clientid=ClientId,
@@ -104,6 +105,9 @@ handle_cast(_Msg, State) ->
 
 handle_info(timeout, State) ->
     {stop, shutdown, State};
+handle_info(pong, State=#state{transports=Pids}) ->
+    [Pid ! <<"pong">> || Pid <- Pids],
+    {noreply, State};
 handle_info(Info, State=#state{handler=Handler,
                                handler_state=HandlerState,
                                transports=Pids}) ->
@@ -196,6 +200,8 @@ handle_stream(Term, Req, #bullet_state{clientid=ClientId}=State) ->
 handle_stream(_, Req, State) ->
     {ok, Req, State}.
 
+handle_reply(<<"pong">>, Req, State) ->
+    {reply, <<"pong">>, Req, State};
 handle_reply(HandlerReply, Req, State) ->
     Reply = bert:encode(HandlerReply),
     {reply, base64:encode(Reply), Req, State}. 
