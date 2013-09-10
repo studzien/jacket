@@ -10,12 +10,16 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    StaticRoutes = [{"/[...]", cowboy_static, [
-                    {directory, <<"priv">>},
-                    {mimetypes, [
-                            {<<".js">>,   [<<"application/javascript">>]},
-                            {<<".html">>, [<<"text/html">>]}
-                            ]}]}],
+    Mime = [{mimetypes, [
+                {<<".js">>,   [<<"application/javascript">>]},
+                {<<".html">>, [<<"text/html">>]}]}],
+    StaticRoutes = [{"/", cowboy_static, [
+                        {directory, <<"priv">>},
+                        {file, "index.html"},
+                        {mimetypes, [{<<".html">>, [<<"text/html">>]}]}]},
+                    {"/[...]", cowboy_static, [
+                        {directory, <<"priv">>},
+                        {mimetypes, Mime}]}],
     BulletRoutes = [{"/clock/[:clientid]", bullet_handler,
                      [{handler, bullet_bert},
                       {callbacks, clock_handler},

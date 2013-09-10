@@ -9,30 +9,41 @@
          <script src="js/bullet-bert.js"></script> 
          <script src="js/Math.uuid.js"></script>
          <script src="js/q.min.js"></script>
+         <style type="text/css">
+            div.clock {
+                font-size: x-large;
+                font-family: sans-serif;
+                color: red;
+            }
+            
+            div.buttons {
+                margin-top: 10px;
+            }
+         </style>
     </head>
     <body>
         <h1>WebSocket</h1>
-        <div id="clock_websocket"></div>
-        <div>
-            <a href="#" onclick="javascript:inc(0);">+1</a>
-            <a href="#" onclick="javascript:dec(0);">-1</a>
-            <a href="#" onclick="javascript:reset(0);">reset</a>
+        <div id="clock_websocket" class="clock"></div>
+        <div class="buttons">
+            <button href="#" onclick="javascript:inc(0);">+1</button>
+            <button href="#" onclick="javascript:dec(0);">-1</button>
+            <button href="#" onclick="javascript:reset(0);">reset</button>
         </div>
 
         <h1>SSE</h1>
-        <div id="clock_sse"></div>
-        <div>
-            <a href="#" onclick="javascript:inc(1);">+1</a>
-            <a href="#" onclick="javascript:dec(1);">-1</a>
-            <a href="#" onclick="javascript:reset(1);">reset</a>
+        <div id="clock_sse" class="clock"></div>
+        <div class="buttons">
+            <button href="#" onclick="javascript:inc(1);">+1</button>
+            <button href="#" onclick="javascript:dec(1);">-1</button>
+            <button href="#" onclick="javascript:reset(1);">reset</button>
         </div>
         
         <h1>XHR Polling</h1>
-        <div id="clock_xhr"></div>
-        <div>
-            <a href="#" onclick="javascript:inc(2);">+1</a>
-            <a href="#" onclick="javascript:dec(2);">-1</a>
-            <a href="#" onclick="javascript:reset(2);">reset</a>
+        <div id="clock_xhr" class="clock"></div>
+        <div class="buttons">
+            <button href="#" onclick="javascript:inc(2);">+1</button>
+            <button href="#" onclick="javascript:dec(2);">-1</button>
+            <button href="#" onclick="javascript:reset(2);">reset</button>
         </div>
         
         <script type="text/javascript">

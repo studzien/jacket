@@ -8,6 +8,13 @@ Such a connection allows Erlang programmers to use Erlang data types in their we
 
 See **examples** directory for usage examples.
 
+Please type
+```
+make
+./start.es
+```
+to start the example. Then visit [http://localhost:8080](http://localhost:8080).
+
 ##clock
 
 This example uses 3 different transports in a Javascript-side (WebSockets, SSE and XHR longpolling) and shows how handler state is kept between events in all 3 cases.
