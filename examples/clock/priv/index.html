@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Clock example</title>
+         <script src="js/jquery-1.10.2.min.js"></script>
+         <script src="js/base64-binary.js"></script>
+         <script src="js/bert.js"></script>
+         <script src="js/bullet.js"></script>
+         <script src="js/bullet-bert.js"></script> 
+         <script src="js/Math.uuid.js"></script>
+         <script src="js/q.min.js"></script>
+    </head>
+    <body>
+        <h1>WebSocket</h1>
+        <div id="clock_websocket"></div>
+        <div>
+            <a href="#" onclick="javascript:inc(0);">+1</a>
+            <a href="#" onclick="javascript:dec(0);">-1</a>
+            <a href="#" onclick="javascript:reset(0);">reset</a>
+        </div>
+
+        <h1>SSE</h1>
+        <div id="clock_sse"></div>
+        <div>
+            <a href="#" onclick="javascript:inc(1);">+1</a>
+            <a href="#" onclick="javascript:dec(1);">-1</a>
+            <a href="#" onclick="javascript:reset(1);">reset</a>
+        </div>
+        
+        <h1>XHR Polling</h1>
+        <div id="clock_xhr"></div>
+        <div>
+            <a href="#" onclick="javascript:inc(2);">+1</a>
+            <a href="#" onclick="javascript:dec(2);">-1</a>
+            <a href="#" onclick="javascript:reset(2);">reset</a>
+        </div>
+        
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var url = 'ws://'+window.location.hostname+':'+window.location.port+'/clock';
+                conn = {};
+                conn[0] = $.bert(url, {disableEventSource: true, disableXHRPolling: true});
+                conn[0].onmessage = function(payload) {
+                    if(payload instanceof BertTuple && payload.length == 2 && payload[0].value == 'time') {
+                        $('#clock_websocket').html(payload[1].toString());
+                    }
+                };
+                conn[1] = $.bert(url, {disableWebSocket: true, disableXHRPolling: true});
+                conn[1].onmessage = function(payload) {
+                    if(payload instanceof BertTuple && payload.length == 2 && payload[0].value == 'time') {
+                        $('#clock_sse').html(payload[1].toString());
+                    }
+                };
+                conn[2] = $.bert(url, {disableWebSocket: true, disableEventSource: true});
+                conn[2].onmessage = function(payload) {
+                    if(payload instanceof BertTuple && payload.length == 2 && payload[0].value == 'time') {
+                        $('#clock_xhr').html(payload[1].toString());
+                    }
+                };
+                
+                inc = function(n) {
+                    conn[n].call(Bert.atom('inc')).then(function(reply) {
+                        console.log('connection ' + n + ' :: current delta: ' + reply);
+                    });
+                };
+                
+                dec = function(n) {
+                    conn[n].call(Bert.atom('dec')).then(function(reply) {
+                        console.log('connection ' + n + ' :: curreny delta: ' + reply);
+                    });
+                };
+                
+                reset = function(n) {
+                    conn[n].cast(Bert.atom('reset'));
+                };
+            });
+                
+        </script>
+    </body>
+</html>
