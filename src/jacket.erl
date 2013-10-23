@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/4]).
+-export([start_link/6]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -51,8 +51,9 @@
 %%% API
 %%%===================================================================
 
-start_link(ClientId, Handler, Args, Transport) ->
-    gen_server:start_link(?MODULE, [ClientId, Handler, Args, Transport], []).
+start_link(ClientId, Handler, Args, Serializer, Deserializer, Transport) ->
+    gen_server:start_link(?MODULE, [ClientId, Handler, Args, Serializer,
+                                    Deserializer, Transport], []).
 
 %%%===================================================================
 %%% gen_server callbacks
