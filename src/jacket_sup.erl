@@ -22,8 +22,8 @@ start_link() ->
 
 init([]) ->
     {ok, { {simple_one_for_one, 5, 10}, [
-                {jacket_bert,
-                 {jacket_bert, start_link, []},
+                {jacket,
+                 {jacket, start_link, []},
                  transient,
                  5000,
                  worker,
