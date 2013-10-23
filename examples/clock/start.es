@@ -7,6 +7,6 @@ main(_) ->
     ok = application:start(crypto),
     ok = application:start(ranch),
     ok = application:start(cowboy),
-    ok = application:start(bullet_bert),
+    ok = application:start(jacket),
     ok = application:start(clock),
     receive _ -> ok end.

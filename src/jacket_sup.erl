@@ -1,5 +1,4 @@
-
--module(bullet_bert_sup).
+-module(jacket_sup).
 
 -behaviour(supervisor).
 
@@ -14,7 +13,7 @@
 %% ===================================================================
 
 start_link() ->
-    ets:new(bullet_clients, [public, named_table, {read_concurrency, true}]),
+    ets:new(jacket_clients, [public, named_table, {read_concurrency, true}]),
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% ===================================================================
@@ -23,8 +22,8 @@ start_link() ->
 
 init([]) ->
     {ok, { {simple_one_for_one, 5, 10}, [
-                {bullet_bert,
-                 {bullet_bert, start_link, []},
+                {jacket,
+                 {jacket, start_link, []},
                  transient,
                  5000,
                  worker,

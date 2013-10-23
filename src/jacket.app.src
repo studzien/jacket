@@ -1,0 +1,13 @@
+{application, jacket,
+ [
+  {description, "A tool that facilitates communication between bullet and web-application"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  cowboy
+                 ]},
+  {mod, { jacket_app, []}},
+  {env, []}
+ ]}.

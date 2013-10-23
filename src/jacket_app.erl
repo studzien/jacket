@@ -1,4 +1,4 @@
--module(bullet_bert_app).
+-module(jacket_app).
 
 -behaviour(application).
 
@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    bullet_bert_sup:start_link().
+    jacket_sup:start_link().
 
 stop(_State) ->
     ok.

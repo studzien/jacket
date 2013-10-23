@@ -1,8 +1,8 @@
 #Introduction
 
-bullet-bert is a library that utilizes [bullet](/extend/bullet) and [BERT-JS](/studzien/BERT-JS) libraries in order to abstract and facilitate communication between Erlang and Javascript applications.
+jacket is a library that utilizes [bullet](/extend/bullet) library in order to abstract and facilitate communication between Erlang and Javascript applications.
 
-Such a connection allows Erlang programmers to use Erlang data types in their web applications and have a sense that a web client is one the processes in Erlang runtime. This is because an Erlang-side behaviour is implemented in a way similiar to `gen_server` behaviour implementation (including state persistence between callbacks calls) and no further data conversion (like to/from JSON) is necessary.
+Such a connection allows Erlang programmers to use Erlang data types in their web applications and have a sense that a web client is one the processes in Erlang runtime. This is because an Erlang-side behaviour is implemented in a way similiar to  the `gen_server`'s behaviour implementation (including state persistence between callbacks calls) and no further data conversion (like to/from JSON) is necessary.
 
 #Examples
 

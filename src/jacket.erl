@@ -1,9 +1,9 @@
--module(bullet_bert).
+-module(jacket).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/4]).
+-export([start_link/6]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -20,11 +20,20 @@
 %% common callback
 -export([terminate/2]).
 
--record(state, {handler, handler_state, timestamp=0,
-                timer, clientid, transports=[]}).
--record(bullet_state, {clientid}).
-
+-define(IDENTITY, fun(X) -> X end).
 -define(TIMEOUT, 90000).
+
+-record(state, {handler,
+                handler_state,
+                timestamp=0,
+                timer,
+                clientid,
+                transports=[],
+                serializer,
+                deserializer}).
+-record(jacket_state, {clientid,
+                       serializer,
+                       deserializer}).
 
 %%%===================================================================
 %%% Callbacks definitions
@@ -49,13 +58,14 @@
 %%% API
 %%%===================================================================
 
-start_link(ClientId, Handler, Args, Transport) ->
-    gen_server:start_link(?MODULE, [ClientId, Handler, Args, Transport], []).
+start_link(ClientId, Handler, Args, Serializer, Deserializer, Transport) ->
+    gen_server:start_link(?MODULE, [ClientId, Handler, Args, Serializer,
+                                    Deserializer, Transport], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([ClientId, Handler, Args, Transport]) ->
+init([ClientId, Handler, Args, Serializer, Deserializer, Transport]) ->
     case Handler:init(Args) of
         {ok, HandlerState} ->
             Timer = erlang:send_after(?TIMEOUT, self(), timeout),
@@ -64,7 +74,9 @@ init([ClientId, Handler, Args, Transport]) ->
                            handler_state=HandlerState,
                            clientid=ClientId,
                            transports=[Transport],
-                           timer=Timer},
+                           timer=Timer,
+                           serializer=Serializer,
+                           deserializer=Deserializer},
             {ok, State};
         {stop, Reason} ->
             {stop, Reason}
@@ -130,25 +142,27 @@ init(_Transport, Req, Opts, _Active) ->
     {callbacks, Handler} = lists:keyfind(callbacks, 1, Opts),
     {args, Args} = lists:keyfind(args, 1, Opts),
     {ClientId, Req1} = cowboy_req:binding(clientid, Req),
-    case ets:lookup(bullet_clients, ClientId) of
+    Serializer = proplists:get_value(serializer, Opts, ?IDENTITY),
+    Deserializer = proplists:get_value(deserializer, Opts, ?IDENTITY),
+    case ets:lookup(jacket_clients, ClientId) of
         [] ->
-            {ok, Pid} = supervisor:start_child(bullet_bert_sup,
-                                              [ClientId, Handler,
-                                               Args, self()]),
-            ets:insert(bullet_clients, {ClientId, Pid});
+            ChildrenArgs = [ClientId,Handler,Args,Serializer,Deserializer,self()],
+            {ok, Pid} = supervisor:start_child(jacket_sup, ChildrenArgs),
+            ets:insert(jacket_clients, {ClientId, Pid});
         [{ClientId, Pid}] ->
             gen_server:cast(Pid, {register, self()})
     end,
-    {ok, Req1, #bullet_state{clientid=ClientId}}.
+    {ok, Req1, #jacket_state{clientid=ClientId,
+                             serializer=Serializer,
+                             deserializer=Deserializer}}.
 
-stream(<<"ping">>, Req, #bullet_state{clientid=ClientId}=State) ->
+stream(<<"ping">>, Req, #jacket_state{clientid=ClientId}=State) ->
     Pid = client_pid(ClientId),
     gen_server:cast(Pid, ping),
     {reply, <<"pong">>, Req, State};
-stream(Data, Req, State) ->
+stream(Data, Req, #jacket_state{deserializer=Deserializer}=State) ->
     try
-        Binary = base64:decode(Data),
-        handle_stream(bert:decode(Binary), Req, State)
+        handle_stream(Deserializer(Data), Req, State)
     catch _:_ ->
         {ok, Req, State}
     end.
@@ -162,9 +176,9 @@ info(Info, Req, State) ->
 terminate(_Reason, #state{handler=Handler, 
                           handler_state=HandlerState,
                           clientid=ClientId}) ->
-    ets:delete(bullet_clients, ClientId),
+    ets:delete(jacket_clients, ClientId),
     Handler:terminate(HandlerState);
-terminate(_Req, #bullet_state{clientid=ClientId}) ->
+terminate(_Req, #jacket_state{clientid=ClientId}) ->
     case client_pid(ClientId) of
         undefined -> ok;
         Pid       -> gen_server:cast(Pid, {unregister, self()})
@@ -189,7 +203,7 @@ bump_timestamp(#state{timestamp=LocalTS}=State) ->
 %%%===================================================================
 %%% bullet_handler internal functions
 %%%===================================================================
-handle_stream(Term, Req, #bullet_state{clientid=ClientId}=State) ->
+handle_stream(Term, Req, #jacket_state{clientid=ClientId}=State) ->
     Pid = client_pid(ClientId),
     case gen_server:call(Pid, Term) of
         {reply, Reply} ->
@@ -202,12 +216,11 @@ handle_stream(_, Req, State) ->
 
 handle_reply(<<"pong">>, Req, State) ->
     {reply, <<"pong">>, Req, State};
-handle_reply(HandlerReply, Req, State) ->
-    Reply = bert:encode(HandlerReply),
-    {reply, base64:encode(Reply), Req, State}. 
+handle_reply(HandlerReply, Req, #jacket_state{serializer=Serializer}=State) ->
+    {reply, Serializer(HandlerReply), Req, State}. 
 
 client_pid(ClientId) ->
-    case ets:lookup(bullet_clients, ClientId) of
+    case ets:lookup(jacket_clients, ClientId) of
         [{ClientId, Pid}] -> Pid;
         _                 -> undefined
     end.
