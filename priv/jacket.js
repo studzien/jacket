@@ -17,7 +17,7 @@
 		this.onmessage = function() {};
 		
 		this.serialize = function(data) {
-		    var bertData = Bert.tuple(data.type, data.timestamp, data.message);
+		    var bertData = Bert.tuple(Bert.atom(data.type), data.timestamp, data.message);
             var term = Bert.encode(bertData);
             var len = term.length;
             var byteArray = new Uint8Array(len);
