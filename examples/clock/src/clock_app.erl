@@ -21,9 +21,11 @@ start(_StartType, _StartArgs) ->
                         {directory, <<"priv">>},
                         {mimetypes, Mime}]}],
     BulletRoutes = [{"/clock/[:clientid]", bullet_handler,
-                     [{handler, bullet_bert},
+                     [{handler, jacket},
                       {callbacks, clock_handler},
-                      {args, []}]
+                      {args, []},
+                      {serializer, fun serializer/1},
+                      {deserializer, fun deserializer/1}]
                     }],
     Dispatch = cowboy_router:compile([{'_', BulletRoutes++StaticRoutes}]),
     cowboy:start_http(clock, 10, 
@@ -34,3 +36,11 @@ start(_StartType, _StartArgs) ->
 
 stop(_State) ->
     ok.
+
+serializer(Data) ->
+    Data1 = bert:encode(Data),
+    base64:encode(Data1).
+
+deserializer(Data) ->
+    Data1 = base64:decode(Data),
+    bert:decode(Data1).
