@@ -23,10 +23,17 @@
 -define(IDENTITY, fun(X) -> X end).
 -define(TIMEOUT, 90000).
 
--record(state, {handler, handler_state, timestamp=0,
-                timer, clientid, transports=[],
-                serializer, deserializer}).
--record(jacket_state, {clientid}).
+-record(state, {handler,
+                handler_state,
+                timestamp=0,
+                timer,
+                clientid,
+                transports=[],
+                serializer,
+                deserializer}).
+-record(jacket_state, {clientid,
+                       serializer,
+                       deserializer}).
 
 %%%===================================================================
 %%% Callbacks definitions
@@ -135,23 +142,25 @@ init(_Transport, Req, Opts, _Active) ->
     {callbacks, Handler} = lists:keyfind(callbacks, 1, Opts),
     {args, Args} = lists:keyfind(args, 1, Opts),
     {ClientId, Req1} = cowboy_req:binding(clientid, Req),
+    Serializer = proplists:get_value(serializer, Opts, ?IDENTITY),
+    Deserializer = proplists:get_value(deserializer, Opts, ?IDENTITY),
     case ets:lookup(jacket_clients, ClientId) of
         [] ->
-            Serializer = proplists:get_value(serializer, Opts, ?IDENTITY),
-            Deserializer = proplists:get_value(deserializer, Opts, ?IDENTITY),
             ChildrenArgs = [ClientId,Handler,Args,Serializer,Deserializer,self()],
             {ok, Pid} = supervisor:start_child(jacket_sup, ChildrenArgs),
             ets:insert(jacket_clients, {ClientId, Pid});
         [{ClientId, Pid}] ->
             gen_server:cast(Pid, {register, self()})
     end,
-    {ok, Req1, #jacket_state{clientid=ClientId}}.
+    {ok, Req1, #jacket_state{clientid=ClientId,
+                             serializer=Serializer,
+                             deserializer=Deserializer}}.
 
 stream(<<"ping">>, Req, #jacket_state{clientid=ClientId}=State) ->
     Pid = client_pid(ClientId),
     gen_server:cast(Pid, ping),
     {reply, <<"pong">>, Req, State};
-stream(Data, Req, #state{deserializer=Deserializer}=State) ->
+stream(Data, Req, #jacket_state{deserializer=Deserializer}=State) ->
     try
         handle_stream(Deserializer(Data), Req, State)
     catch _:_ ->
@@ -207,7 +216,7 @@ handle_stream(_, Req, State) ->
 
 handle_reply(<<"pong">>, Req, State) ->
     {reply, <<"pong">>, Req, State};
-handle_reply(HandlerReply, Req, #state{serializer=Serializer}=State) ->
+handle_reply(HandlerReply, Req, #jacket_state{serializer=Serializer}=State) ->
     {reply, Serializer(HandlerReply), Req, State}. 
 
 client_pid(ClientId) ->
